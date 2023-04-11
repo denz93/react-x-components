@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, FormEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useCallback } from 'react'
 import styled, { keyframes, useTheme } from 'styled-components'
 import { useXTheme } from '../createTheme'
@@ -22,6 +22,7 @@ const BuiltInInput = styled.input`
     font-size: inherit;
     font-family: inherit;
     width: ${props => props.theme.XComponent?.input?.defaultWidth ?? '10em'};
+    pointer-events: none;
 `
 const InputWrapper = styled.div`
     --border-color: ${props => props.theme.XComponent?.input?.borderColor ?? '#FFFFFFAA'};
@@ -61,8 +62,7 @@ const Input = styled.div`
     display: flex;
     align-items: center;
     width: ${props => props.theme.XComponent?.input?.defaultWidth ?? '10em'};
-    min-height: 1em;
-    height: max-content;
+    height: 1em;
     overflow: hidden visible;
     background-color:  transparent;
     font-size: inherit;
@@ -70,11 +70,13 @@ const Input = styled.div`
 `
 const Char = styled.span`
     position: relative;
+    font-weight: bolder;
     &.self[role="caret"] {
         opacity: 0;
+        font-weight: bold;
     }
 
-    ${InputWrapper}:focus &, ${BuiltInInput}:focus + ${Input} & {
+    ${InputWrapper}.focus & {
         &[role="caret"] {
             animation: ${BlinkAnimation} .2s ease-in-out infinite;
             &:before {
@@ -100,8 +102,32 @@ const Char = styled.span`
         }
     }
 `
+const PlaceHolder = styled.span`
+    opacity: .5;
+`
 
-export default function XInput () {
+
+export interface IXInputProps  {
+    onClick: () => void 
+    onFocus: () => void 
+    /**
+     * 
+     * @returns true if you want to re-focus 
+     */
+    onBlur: () => void | boolean
+    onChange: (value: string) => void 
+    value: string 
+    placeholder: string
+    type: "text" | "email" | "phone" | "number"
+}
+
+
+export default function XInput ({
+    placeholder = '', 
+    type = 'text',
+    ...props
+    }: Partial<IXInputProps>) {
+
     const theme = useXTheme()
     const [value, setValue] = useState('')
     const [cursor, setCursor] = useState(0)
@@ -110,27 +136,28 @@ export default function XInput () {
     const inputRef = useRef<HTMLDivElement>(null)
     const builtinInputRef = useRef<HTMLInputElement>(null)
 
-    const charList = value.split('').map(c => c === ' ' ? HTML_SPACE_CHAR : c)
+    const display = useMemo(() => {
+        const charList = value.split('').map(c => c === ' ' ? HTML_SPACE_CHAR : c)
 
-    const display = <>
-        {charList.map((c, idx) => <Char
-            key={idx}
-            role={idx === cursor ? "caret" : ""}
-            data-key={c === HTML_SPACE_CHAR ? (theme?.input?.space ?? '⎵') : c}
-            className={idx === composition ? "composition" : ""}
-            dangerouslySetInnerHTML={{__html: c}}
-        />)}
-        {charList.length === cursor && <Char 
-            role="caret" 
-            className='self'
-            data-key="_"
-            >
-                {theme?.input?.caret ?? '_'}
-            </Char>}
-    </> 
+        return <>
+            {charList.map((c, idx) => <Char
+                key={idx}
+                role={idx === cursor ? "caret" : ""}
+                data-key={c === HTML_SPACE_CHAR ? (theme?.input?.space ?? '⎵') : c}
+                className={idx === composition ? "composition" : ""}
+                dangerouslySetInnerHTML={{__html: c}}
+            />)}
+            {charList.length <= cursor && <Char 
+                role="caret" 
+                className='self'
+                data-key="_"
+                >
+                    {theme?.input?.caret ?? '_'}
+                </Char>}
+        </>
+    } , [value, cursor, composition])  
 
     const compositionCallback = useCallback((event: React.CompositionEvent) => {
-        console.log(`Composition event: ${event.type} - "${event.data}"`)
         switch(event.type) {
             case 'compositionstart':
                 setComposition(value.length)
@@ -141,6 +168,18 @@ export default function XInput () {
            
         }
     }, [value, composition, cursor])
+
+    const builtInInputChangeCallback = useCallback((event: FormEvent<HTMLInputElement>) => {
+        setValue(event.currentTarget.value);
+        props.onChange && props.onChange(event.currentTarget.value)
+    }, [props.onChange])
+
+    const builtInSelectionCallback = useCallback((event: SyntheticEvent<HTMLInputElement>) => {
+        const {selectionStart, selectionEnd} = event.currentTarget
+        if (selectionStart === null) return 
+
+        setCursor(selectionStart)
+    }, [value])
 
 
     useEffect(() => {
@@ -155,11 +194,36 @@ export default function XInput () {
         }
     },[cursor, value])
 
+    useEffect(() => {
+        const val = props.value ?? '';
+        setValue(val)
+        setCursor(val.length)
+    }, [props.value])
+
+    useEffect(() => {
+        if (focus)
+            builtinInputRef.current?.focus()
+    }, [focus])
+
     return <InputWrapper 
         tabIndex={0} 
-        onBlur={() => setComposition(null)}
-        onClick={() => builtinInputRef.current?.focus()}
-        onFocus={() => builtinInputRef.current?.focus()}
+        onBlur={() => {
+            const forceFocus = props.onBlur && props.onBlur()
+            if (forceFocus) {
+                builtinInputRef.current?.focus()
+
+            } else {
+                setComposition(null)
+                setFocus(false)
+            }
+        }}
+        onClick={() => {
+            props.onClick && props.onClick()
+        }}
+        onFocus={() => {
+            setFocus(true);
+            props.onFocus && props.onFocus()
+        }}
         onCompositionEnd={compositionCallback}
         onCompositionUpdate={compositionCallback}
         onCompositionStart={compositionCallback}
@@ -167,15 +231,13 @@ export default function XInput () {
         >
         <BuiltInInput 
             ref={builtinInputRef}  
-            onChange={(event) => { setValue(event.target.value);  }}
-            onSelect={(event) => { 
-                setCursor(event.currentTarget.selectionStart??0)
-            }}
-            onFocus={() => setFocus(true)}
-            onBlur={() => setFocus(false)}
+            onInput={builtInInputChangeCallback}
+            onSelect={builtInSelectionCallback}
+            value={value}
         />    
         <Input ref={inputRef}>
-            {display}
+            {(focus || value.length > 0) && display}
+            {!focus && value.length === 0 && <PlaceHolder>{placeholder??''}</PlaceHolder>}
         </Input>
     </InputWrapper>
 }
