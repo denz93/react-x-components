@@ -17,8 +17,11 @@ export const DEFAULT_THEME: DefaultTheme = {
             space: '␣',
             defaultWidth: '15em',
             padding: '.7em .7em',
-            color: 'red'
+            color: 'currentColor',
+            borderColor: 'currentColor',
+            caretColor: 'currentColor',
         }
+
     }
         
 }
@@ -26,7 +29,7 @@ export const DEFAULT_THEME: DefaultTheme = {
 
 
 export function createTheme(theme: XTheme = {}) {
-    const newTheme = _.merge(DEFAULT_THEME, theme)
+    const newTheme = _.merge(DEFAULT_THEME, {XComponent: theme})
     const ComponentThemeProvider = (props: React.PropsWithChildren<{}>) => {
         return <ThemeProvider theme={newTheme}>
             {props.children}
