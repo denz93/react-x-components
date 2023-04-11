@@ -16,9 +16,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "declaration": true,
-    "rootDir": "src/ui-components",
     "outDir": "dist"
   },
-  "include": ["src/ui-components"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
