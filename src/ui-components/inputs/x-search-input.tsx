@@ -4,20 +4,25 @@ import { useCallback, useRef, useState } from "react"
 
 const Main = styled.div`
   position: relative;
+  width: 100%;
 `
 
-const FloatSection = styled.div<{shouldShow: boolean}>`
+export const FloatSection = styled.div<{shouldShow: boolean}>`
   position: absolute;
   display: flex;
   flex-direction: column;
   padding: .7em 1.5em;
-  overflow: hidden;
-  transition: filter .3s ease-in-out, transform .1s ease-in-out;
+  margin-top: 1em;
+  transition: filter .3s ease-in-out, transform .5s ease-in-out;
   filter: blur(10px) ;
   transform: scale(0);
+  max-height: 5em;
+  overflow: hidden scroll;
+  box-shadow: 0 0  5px 1px currentColor;
   ${props => props.shouldShow && `
     filter: blur(0) ;
     transform: scale(1);
+    transition: filter .3s ease-in-out, transform .1s ease-in-out;
   `}
 `
 const Option = styled.div`
@@ -32,19 +37,19 @@ const Option = styled.div`
     content: '✔';
     position: absolute;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: 1em;
     height: 1em;
     transition: opacity .2s ease-in-out, transform .4s ease-in-out;
     border-radius: 0;
     opacity: 0;
     top: 50%;
-    left: -1.5em;
+    left: -1.2em;
     border: 1px solid currentColor;
     transform: translateY(-50%) scale(0);
     border-radius: 10em;
-
+    scale: .8;
   }
   &[data-selected="true"] {
     filter: brightness(1.4);
@@ -62,6 +67,7 @@ const Arrow = styled.span`
   position: absolute;
   width: 1em;
   height: 1em;
+  line-height: 1.5em;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -72,6 +78,7 @@ const Arrow = styled.span`
   cursor: pointer;
   pointer-events: none;
   opacity: .2;
+  transform-origin: center center;
   &[data-up="true"] {
     transform: translateY(-50%) rotate(180deg);
     opacity: 1;
@@ -111,6 +118,7 @@ export function XSearchInput<T>({
   const [selectedOption, setSelectedOption] = useState<T|null>(null)
   const [searchValue, setSearchValue] = useState('')
   const floatSectionRef = useRef<HTMLDivElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
   const focus = inputFocus || optionFocus
 
   const filteredOptionList = 
@@ -136,15 +144,18 @@ export function XSearchInput<T>({
     
   }, [])
   return <Main
+    {...props}
+    ref={mainRef}
     tabIndex={0}
     onBlurCapture={(ev) => {
-      if (ev.relatedTarget === floatSectionRef.current) {
+      if (ev.relatedTarget === mainRef.current || ev.relatedTarget === floatSectionRef.current) {
+        setInputFocus(true)
         setOptionFocus(true)
       } else {
+        setInputFocus(false)
         setOptionFocus(false)
       }
     }}
-    
   >
     <XInput 
       placeholder={props.placeholder}
@@ -158,29 +169,28 @@ export function XSearchInput<T>({
       onChange={searchValueChangeCallback}
       onFocus={() => { setInputFocus(true);}}
       onBlur={() => {
-        setInputFocus(false)
-        return optionFocus
+        // if (!optionFocus) setInputFocus(false)
+        // return optionFocus
       }}
       />
     <Arrow data-up={focus}>▼</Arrow>
 
     <FloatSection 
       ref={floatSectionRef}
-      shouldShow={focus} 
-      tabIndex={0}
-      onFocus={() => { setOptionFocus(true); setInputFocus(true); console.log(`Float Section focus`)}}
-      onBlur={() => setOptionFocus(false)}
+      shouldShow={focus}
+      role={'listbox'}
       >
       { filteredOptionList.map((option, idx) => 
         <Option 
           key={idx}
+          role={'listitem'}
           onClick={() => { selectedOption !== option ? setSelectedOption(option) : setSelectedOption(null); }}
           data-selected={option === selectedOption}
         >
           {optionFormater(option)}
         </Option>)
       }
-      {filteredOptionList.length === 0 && <span>No option matched "{searchValue}"</span>}
+      {filteredOptionList.length === 0 && <span role={'listitem'}>No option matched "{searchValue}"</span>}
     </FloatSection>
   </Main>
 }

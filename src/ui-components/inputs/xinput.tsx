@@ -14,15 +14,19 @@ const BlinkAnimation = keyframes`
     }
 `
 const BuiltInInput = styled.input`
-    position: absolute;
-    border: 1px solid red;
+    position: relative;
     opacity: 0;
     z-index: -1;
     left: 0;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: inherit;
     font-family: inherit;
-    width: ${props => props.theme.XComponent?.input?.defaultWidth ?? '10em'};
     pointer-events: none;
+    width: 100%;
+    padding: 0;
+    border: none;
+    grid-area:  1 / 1 / 1 / 2;
 `
 const InputWrapper = styled.div`
     --border-color: ${props => props.theme.XComponent?.input?.borderColor ?? '#FFFFFFAA'};
@@ -31,12 +35,14 @@ const InputWrapper = styled.div`
     padding: ${props => props.theme.XComponent?.input?.padding ?? '.7em .7em'};
     background-color: inherit;
     border-radius: ${props => props.theme.XComponent?.input?.borderRadius ?? '0'};
+    width: auto;
+    display: grid;
 
     &:after {
         content: '';
         position: absolute;
         inset: 0;
-        outline: 1px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background-color: inherit;
         z-index: -1;
         border-radius: inherit;
@@ -47,7 +53,7 @@ const InputWrapper = styled.div`
             content: '';
             position: absolute;
             inset: -1px;
-            outline: 1px solid currentColor;
+            border: 1px solid currentColor;
             z-index: -2;
             filter: blur(2px);
             border-radius: inherit;
@@ -61,16 +67,18 @@ const Input = styled.div`
     position: relative;
     display: flex;
     align-items: center;
-    width: ${props => props.theme.XComponent?.input?.defaultWidth ?? '10em'};
-    height: 1em;
-    overflow: hidden visible;
+    height: 1.5em;
+    overflow: hidden;
     background-color:  transparent;
     font-size: inherit;
-
+    user-select: none;
+    width: 100%;
+    grid-area:  1 / 1 / 1 / 2;
 `
 const Char = styled.span`
     position: relative;
-    font-weight: bolder;
+    align-items: center;
+    width: fit-content;
     &.self[role="caret"] {
         opacity: 0;
         font-weight: bold;
@@ -100,10 +108,22 @@ const Char = styled.span`
         &.composition {
             text-decoration: underline;
         }
+        &[data-selected="true"] {
+            &:after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-color: currentColor;
+                opacity: .2;
+            }
+        }
     }
+
+    
 `
 const PlaceHolder = styled.span`
     opacity: .5;
+ 
 `
 
 
@@ -118,7 +138,7 @@ export interface IXInputProps  {
     onChange: (value: string) => void 
     value: string 
     placeholder: string
-    type: "text" | "email" | "phone" | "number"
+    type: "text" | "password"
 }
 
 
@@ -133,17 +153,21 @@ export default function XInput ({
     const [cursor, setCursor] = useState(0)
     const [composition, setComposition] = useState<number | null>(null)
     const [focus, setFocus] = useState(false)
+    const [selection, setSelection] = useState<[number, number]>([0,0])
     const inputRef = useRef<HTMLDivElement>(null)
     const builtinInputRef = useRef<HTMLInputElement>(null)
 
     const display = useMemo(() => {
-        const charList = value.split('').map(c => c === ' ' ? HTML_SPACE_CHAR : c)
+        let charList = value.split('').map(c => c === ' ' ? HTML_SPACE_CHAR : c)
+        charList = type === 'password' ? charList.map(c => '*') : charList
+        const hasSelection = selection[0] !== selection[1]
 
         return <>
             {charList.map((c, idx) => <Char
                 key={idx}
                 role={idx === cursor ? "caret" : ""}
                 data-key={c === HTML_SPACE_CHAR ? (theme?.input?.space ?? '⎵') : c}
+                data-selected={idx >= selection[0] && idx < selection[1]}
                 className={idx === composition ? "composition" : ""}
                 dangerouslySetInnerHTML={{__html: c}}
             />)}
@@ -155,7 +179,7 @@ export default function XInput ({
                     {theme?.input?.caret ?? '_'}
                 </Char>}
         </>
-    } , [value, cursor, composition])  
+    } , [value, cursor, composition, selection])  
 
     const compositionCallback = useCallback((event: React.CompositionEvent) => {
         switch(event.type) {
@@ -176,10 +200,18 @@ export default function XInput ({
 
     const builtInSelectionCallback = useCallback((event: SyntheticEvent<HTMLInputElement>) => {
         const {selectionStart, selectionEnd} = event.currentTarget
-        if (selectionStart === null) return 
+        if (selectionStart != selection[0] || selectionEnd != selection[1]) {
+            setSelection([selectionStart??0, selectionEnd??0])
+            
+            event.currentTarget.offsetLeft
+        }
+        console.log({selectionStart, selectionEnd})
 
+        if (selectionStart === null) return 
         setCursor(selectionStart)
-    }, [value])
+
+        
+    }, [value, selection])
 
 
     useEffect(() => {
@@ -197,7 +229,6 @@ export default function XInput ({
     useEffect(() => {
         const val = props.value ?? '';
         setValue(val)
-        setCursor(val.length)
     }, [props.value])
 
     useEffect(() => {
@@ -205,13 +236,15 @@ export default function XInput ({
             builtinInputRef.current?.focus()
     }, [focus])
 
+   
+
     return <InputWrapper 
+
         tabIndex={0} 
         onBlur={() => {
             const forceFocus = props.onBlur && props.onBlur()
             if (forceFocus) {
-                builtinInputRef.current?.focus()
-
+                setTimeout(() => {builtinInputRef.current?.focus()}, 1)
             } else {
                 setComposition(null)
                 setFocus(false)
@@ -228,14 +261,23 @@ export default function XInput ({
         onCompositionUpdate={compositionCallback}
         onCompositionStart={compositionCallback}
         className={focus ? 'focus' : ''}
+        onKeyDown={() => setCursor(builtinInputRef.current?.selectionStart??0)}
         >
         <BuiltInInput 
             ref={builtinInputRef}  
             onInput={builtInInputChangeCallback}
             onSelect={builtInSelectionCallback}
+            onBlur={() => { setFocus(false)}}
             value={value}
+            type={type}
+            name={type}
         />    
-        <Input ref={inputRef}>
+        <Input ref={inputRef}
+            typeof={type}
+            role={'textbox'}
+            
+        >
+
             {(focus || value.length > 0) && display}
             {!focus && value.length === 0 && <PlaceHolder>{placeholder??''}</PlaceHolder>}
         </Input>

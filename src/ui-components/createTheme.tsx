@@ -12,7 +12,7 @@ declare module 'styled-components' {
 export const DEFAULT_THEME: DefaultTheme = {
     XComponent: {
         input: {
-            borderRadius: '.5em',
+            borderRadius: '0',
             caret: '_',
             space: '␣',
             defaultWidth: '15em',
