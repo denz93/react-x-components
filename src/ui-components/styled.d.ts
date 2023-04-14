@@ -1,5 +1,5 @@
 import 'styled-components'
-import { XTheme } from './ui-components/interfaces'
+import { XTheme } from './interfaces'
 
 declare module 'styled-components' {
     export interface DefaultTheme {
