@@ -9,4 +9,19 @@ export interface XTheme {
         borderColor?: string
         borderRadius?: string
     }
+    /**
+     * "Global" styles will apply to all components
+     */
+    global? : {
+    }
+}
+
+export interface IXBaseInputProps<T> {
+    onChange: (value: T) => void 
+    onFocus: () => void 
+    onBlur: () => void 
+
+    placeholder: string 
+    value: T 
+
 }

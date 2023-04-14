@@ -7,7 +7,7 @@ import { XPhoneInput } from './ui-components/inputs/x-phone-input'
 
 const ThemeProvider = createTheme({
   input: {
-    borderRadius: '10em',
+    borderRadius: '2em',
 
   }
 })
@@ -15,6 +15,7 @@ const ThemeProvider = createTheme({
 function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [phone, setPhone] = useState('')
 
   const [options, setOptions] = useState({
     "1": { title: 'VueJS' },
@@ -60,7 +61,12 @@ function App() {
         
        
         <div style={{width: '15em'}}>
-          <XPhoneInput/>
+          <XPhoneInput 
+            allowedCountries={['us', 'vn']} 
+            value={phone} 
+            onChange={(val) => setPhone(val)}
+            defautCountryCode='us'
+          />
         </div>
           
       </div>

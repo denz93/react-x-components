@@ -1,6 +1,6 @@
 import styled from "styled-components"
 import XInput from "./xinput"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 const Main = styled.div`
   position: relative;
@@ -9,8 +9,8 @@ const Main = styled.div`
 
 export const FloatSection = styled.div<{shouldShow: boolean}>`
   position: absolute;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   padding: .7em 1.5em;
   margin-top: 1em;
   transition: filter .3s ease-in-out, transform .5s ease-in-out;
@@ -19,13 +19,14 @@ export const FloatSection = styled.div<{shouldShow: boolean}>`
   max-height: 5em;
   overflow: hidden scroll;
   box-shadow: 0 0  5px 1px currentColor;
+  z-index: 10;
   ${props => props.shouldShow && `
     filter: blur(0) ;
     transform: scale(1);
     transition: filter .3s ease-in-out, transform .1s ease-in-out;
   `}
 `
-const Option = styled.div`
+export const Option = styled.div`
   position: relative;
   cursor: pointer;
   user-select: none;
@@ -94,7 +95,7 @@ export interface IXSearchInputProps<T> {
   placeholder: string 
 
   onSearchChanged: (value: string) => void 
-  onOptionSelected: (option: T) => void 
+  onOptionSelected: (option: T | null) => void 
 }
 const defaultOptionFormater = <T,>(option: T) => {
   return String(option)
@@ -110,17 +111,18 @@ export function XSearchInput<T>({
   optionFormater = defaultOptionFormater<T>, 
   optionDisplayFormater = defaultOptionDisplayFormater<T>,
   optionMatchStrategy = defaultOptionMatchStrategy<T>,
-  optionList, 
+  optionList,
+  onOptionSelected,
   ...props}: Partial<IXSearchInputProps<T>>
   ) {
   const [inputFocus, setInputFocus] = useState(false)
   const [optionFocus, setOptionFocus] = useState(false)
-  const [selectedOption, setSelectedOption] = useState<T|null>(null)
+  const [selectedOption, setSelectedOption] = useState<T|null>(props.defaultOption??null)
   const [searchValue, setSearchValue] = useState('')
   const floatSectionRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
   const focus = inputFocus || optionFocus
-
+  
   const filteredOptionList = 
     Array.isArray(optionList) 
     ? optionList?.filter(option => {
@@ -143,6 +145,10 @@ export function XSearchInput<T>({
     setSearchValue(val)
     
   }, [])
+
+  useEffect(() => {
+    setSelectedOption(props.defaultOption ?? null)
+  }, [props.defaultOption])
   return <Main
     {...props}
     ref={mainRef}
@@ -162,7 +168,7 @@ export function XSearchInput<T>({
       value={
         focus 
         ? searchValue 
-        : selectedOption !== null
+        : selectedOption !== null && searchValue !== undefined
         ? optionDisplayFormater(selectedOption)
         : undefined
       }
@@ -184,7 +190,11 @@ export function XSearchInput<T>({
         <Option 
           key={idx}
           role={'listitem'}
-          onClick={() => { selectedOption !== option ? setSelectedOption(option) : setSelectedOption(null); }}
+          onClick={() => { 
+            const newOption = selectedOption !== option ? option : null
+            setSelectedOption(newOption)
+            onOptionSelected && onOptionSelected(newOption)
+          }}
           data-selected={option === selectedOption}
         >
           {optionFormater(option)}
