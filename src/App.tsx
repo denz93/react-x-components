@@ -4,11 +4,13 @@ import { createTheme, DEFAULT_THEME } from './ui-components/createTheme'
 import XInput from './ui-components/inputs/xinput'
 import { XSearchInput } from './ui-components/inputs/x-search-input'
 import { XPhoneInput } from './ui-components/inputs/x-phone-input'
+import { XForm } from './ui-components/inputs/x-form'
+import { useForm } from './ui-components/hooks/useForm'
 
 const ThemeProvider = createTheme({
   input: {
     borderRadius: '2em',
-
+    padding: '.7em 1em'
   }
 })
 
@@ -16,6 +18,10 @@ function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
+  const formContext = useForm([
+    { firstName: { type: 'text' }, lastName: {type: 'text' }},
+    { email: { type: 'text', label: 'Email', required: true }}
+  ])
 
   const [options, setOptions] = useState({
     "1": { title: 'VueJS' },
@@ -68,7 +74,10 @@ function App() {
             defautCountryCode='us'
           />
         </div>
-          
+        
+        <div>
+          <XForm form={formContext}/>
+        </div>
       </div>
     </ThemeProvider>
     

@@ -236,6 +236,7 @@ const InputWrapper = styled.div`
     background-color: inherit;
     border-radius: ${props => props.theme.XComponent?.input?.borderRadius ?? '0'};
     width: auto;
+    height: fit-content;
     display: grid;
 
     &:after {
