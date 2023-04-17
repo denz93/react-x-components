@@ -1,7 +1,7 @@
 import styled, { keyframes } from "styled-components";
-import { FormContext, IFormField, IFormStage } from "../hooks/useForm";
+import { FormContext, IFormStage } from "../hooks/useForm";
 import {XInput} from "./xinput";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { XButton } from "../buttons/x-button";
 
 export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {

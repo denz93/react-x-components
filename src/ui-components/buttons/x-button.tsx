@@ -1,5 +1,4 @@
-import { ButtonHTMLAttributes, useEffect, useRef, useState } from "react"
-import styled, { keyframes } from "styled-components"
+import styled from "styled-components"
 import { withGlowBorderEffect } from "../higher-order-components/with-glow-effect"
 
 const Button = styled.button.attrs({type: 'button'})`

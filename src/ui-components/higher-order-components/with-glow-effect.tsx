@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import styled, {StyledComponentProps, StyledProps, keyframes } from "styled-components"
+import styled, {StyledProps, keyframes } from "styled-components"
 
 export interface IGlowBorderEffectProps<FC extends React.FunctionComponent<{children?: ReactNode}>> {
   fc: FC

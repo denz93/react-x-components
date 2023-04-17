@@ -1,6 +1,6 @@
-import React, { ChangeEvent, FormEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
+import React, { FormEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useCallback } from 'react'
-import styled, { keyframes, useTheme } from 'styled-components'
+import styled, { keyframes } from 'styled-components'
 import { useXTheme } from '../createTheme'
 import { withGlowBorderEffect } from '../higher-order-components/with-glow-effect'
 
