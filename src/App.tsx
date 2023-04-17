@@ -1,16 +1,23 @@
 import { useState } from 'react'
 import './App.css'
-import { createTheme, DEFAULT_THEME } from './ui-components/createTheme'
-import XInput from './ui-components/inputs/xinput'
+import { createTheme } from './ui-components/createTheme'
+import {XInput} from './ui-components/inputs/xinput'
 import { XSearchInput } from './ui-components/inputs/x-search-input'
 import { XPhoneInput } from './ui-components/inputs/x-phone-input'
 import { XForm } from './ui-components/inputs/x-form'
 import { useForm } from './ui-components/hooks/useForm'
 
 const ThemeProvider = createTheme({
-  input: {
-    borderRadius: '2em',
-    padding: '.7em 1em'
+  // button: {
+  //   borderRadius: '1em'
+  // },
+  global: {
+    padding: '.7em 1em',
+    text: 'rgba(214, 179, 113, 0.87)',
+    border: {
+      color: 'rgba(214, 179, 113, 0.87)',
+      radius: '2em'
+    }
   }
 })
 
@@ -79,7 +86,7 @@ function App() {
           <XForm form={formContext}/>
         </div>
       </div>
-    </ThemeProvider>
+     </ThemeProvider>
     
   )
 }
