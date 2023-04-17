@@ -1,7 +1,8 @@
 import styled, { keyframes } from "styled-components";
 import { FormContext, IFormField, IFormStage } from "../hooks/useForm";
-import XInput from "./xinput";
-import { useMemo } from "react";
+import {XInput} from "./xinput";
+import { useEffect, useMemo, useRef } from "react";
+import { XButton } from "../buttons/x-button";
 
 export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {
     const { 
@@ -16,49 +17,56 @@ export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {
         submit,
         back,
         errors,
-        validateStage
+        validateStage,
+        isFinish
     } = form
 
     const FormStageList = useMemo(() => {
         return stages.map((stage, idx) => <StyledFormGroup key={idx} data-current={idx === currentStage}>
             {Object.keys(stage).map(fieldName => {
                 const {type, label, required} = stage[fieldName]
-                return <StyledXInput 
-                    key={fieldName} 
-                    type={stage[fieldName].type} 
-                    placeholder={label??fieldName}
-                    value={fields[fieldName]}
-                    onChange={(val) => updateField(fieldName, val)}
+                return <InputWrapper 
                     data-has-error={errors && fieldName in errors}
-                />
+                    key={fieldName} 
+                >
+                    <XInput
+                        type={stage[fieldName].type} 
+                        placeholder={label??fieldName}
+                        value={fields[fieldName]}
+                        onChange={(val) => updateField(fieldName, val)}
+                    />
+                </InputWrapper>
             })}
         </StyledFormGroup>)
     }, [stages, currentStage])
-
+    
     return <StyledForm>
         <p>Form step {currentStage + 1}/{totalStages}</p>
         <StyledFormGroupWrapper>
             { FormStageList }
         </StyledFormGroupWrapper>
         <ActionList>
-            {hasBack && <Button type="button" disabled={!hasBack} onClick={() => {
+            {!isFinish && hasBack && <XButton type="button" disabled={!hasBack} onClick={() => {
                 back()
-            }}>Back</Button>}
+            }}>Back</XButton>}
 
-            {hasNext && <Button type="button" disabled={!hasNext} onClick={() => { 
+            {hasNext && <XButton type="button" disabled={!hasNext} onClick={() => { 
                 const err = validateStage(currentStage)
                 !err && next()
-            }}>Next</Button>}
+            }}>Next</XButton>}
 
-            {!hasNext && <Button type="button" onClick={() => {
-                validateStage(currentStage)
-                submit()
-            }}>Submit</Button>}
+            {!hasNext && <XButton type="button" onClick={() => {
+                const err = validateStage(currentStage)
+                !err && submit()
+            }}>Submit</XButton>}
+            
+            <div></div>
         </ActionList>
     </StyledForm>
 }
 
 const StyledForm = styled.form`
+    color: ${props => props.theme.XComponent?.global?.text?? 'currentColor'};
     display: grid;
     gap: 1em;
     grid-template-columns: 1fr;
@@ -97,23 +105,6 @@ const ActionList = styled.div`
     justify-content: space-evenly;
 `
 
-const Button = styled.button.attrs({type: 'button'})`
-    color: inherit;
-    padding: .7em 1em;
-    background-color: transparent;
-    border-color: currentColor;
-    outline: none;
-    border: 1px solid currentColor;
-`
-
-const StyledXInput = styled(XInput)`
-    &[data-has-error="true"] {
-        position: relative;
-        animation: Shake 1s ease-in-out;
-        outline: red 1px solid;
-    }
-`
-
 const Shake = keyframes`
     0%, 20%, 40% {
         transform: translateX(-10%);
@@ -121,7 +112,16 @@ const Shake = keyframes`
     10%, 30%, 50% {
         transform: translateX(10%);
     }
-    100% {
+    60%, 100% {
         transform: translateX(0);
+    }
+`
+const InputWrapper = styled.div`
+    position: relative;
+    height: fit-content;
+    &[data-has-error="true"] {
+        position: relative;
+        animation: ${Shake} 1s ease-in-out;
+        outline: red 1px solid;
     }
 `

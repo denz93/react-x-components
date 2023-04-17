@@ -2,6 +2,7 @@ import React, { ChangeEvent, FormEvent, SyntheticEvent, useEffect, useMemo, useR
 import { useCallback } from 'react'
 import styled, { keyframes, useTheme } from 'styled-components'
 import { useXTheme } from '../createTheme'
+import { withGlowBorderEffect } from '../higher-order-components/with-glow-effect'
 
 const HTML_SPACE_CHAR = '&nbsp;'
 
@@ -49,10 +50,14 @@ export interface IXInputProps  {
 }
 
 
-export default function XInput ({
+export function _XInput ({
     placeholder = '', 
     type = 'text',
     displayTemplate = '',
+    onBlur,
+    onChange,
+    onClick,
+    onFocus,
     ...props
     }: Partial<IXInputProps>) {
 
@@ -118,8 +123,8 @@ export default function XInput ({
 
     const builtInInputChangeCallback = useCallback((event: FormEvent<HTMLInputElement>) => {
         setValue(event.currentTarget.value);
-        props.onChange && props.onChange(getValueByTemplate(event.currentTarget.value, displayTemplate))
-    }, [props.onChange, displayTemplate])
+        onChange && onChange(getValueByTemplate(event.currentTarget.value, displayTemplate))
+    }, [onChange, displayTemplate])
 
     const builtInSelectionCallback = useCallback((event: SyntheticEvent<HTMLInputElement>) => {
         const {selectionStart, selectionEnd} = event.currentTarget
@@ -158,10 +163,11 @@ export default function XInput ({
             builtinInputRef.current?.focus()
     }, [focus])
 
-    return <InputWrapper 
+    return <InputWrapper
+        {...props }
         tabIndex={0} 
         onBlur={() => {
-            const forceFocus = props.onBlur && props.onBlur()
+            const forceFocus = onBlur && onBlur()
             if (forceFocus) {
                 setTimeout(() => {builtinInputRef.current?.focus()}, 1)
             } else {
@@ -170,11 +176,11 @@ export default function XInput ({
             }
         }}
         onClick={() => {
-            props.onClick && props.onClick()
+            onClick && onClick()
         }}
         onFocus={() => {
             setFocus(true);
-            props.onFocus && props.onFocus()
+            onFocus && onFocus()
         }}
         onCompositionEnd={compositionCallback}
         onCompositionUpdate={compositionCallback}
@@ -203,6 +209,8 @@ export default function XInput ({
     </InputWrapper>
 }
 
+export const XInput = withGlowBorderEffect(_XInput)
+
 const BlinkAnimation = keyframes`
     0% {
         opacity: 0;
@@ -227,14 +235,14 @@ const BuiltInInput = styled.input`
     grid-area:  1 / 1 / 1 / 2;
 `
 const InputWrapper = styled.div`
-    --border-color: ${props => props.theme.XComponent?.input?.borderColor ?? '#FFFFFFAA'};
-    --color: ${props => props.theme.XComponent?.input?.color ?? 'currentColor'};
+    --border-color: ${props => props.theme.XComponent?.__borderColor('input') ?? 'currentColor'};
+    --color: ${props => props.theme.XComponent?.__color('input') ?? 'currentColor'};
     color: var(--color);
     font-size: 1em;
     position: relative;
     padding: ${props => props.theme.XComponent?.input?.padding ?? '.7em .7em'};
     background-color: inherit;
-    border-radius: ${props => props.theme.XComponent?.input?.borderRadius ?? '0'};
+    border-radius: ${props => props.theme.XComponent?.__borderRadius('input') ?? '0'};
     width: auto;
     height: fit-content;
     display: grid;

@@ -1,13 +1,15 @@
 import styled from "styled-components"
-import XInput from "./xinput"
+import {XInput} from "./xinput"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 const Main = styled.div`
   position: relative;
   width: 100%;
+  color: ${props => props.theme.XComponent?.__color('input')??'currentColor'};
 `
 
 export const FloatSection = styled.div<{shouldShow: boolean}>`
+  background-color: ${props => props.theme.XComponent?.global?.background??'transparent'};
   position: absolute;
   display: grid;
   grid-template-columns: 1fr;

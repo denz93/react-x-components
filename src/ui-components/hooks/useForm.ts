@@ -12,13 +12,16 @@ export interface IFormStage {
 
 export type IUseFormProps = IFormStage[]
 
-type GetFieldNames<T> = keyof T
+type GetFieldNames<T extends IFormStage> = keyof T
+type FieldNameType<T extends IFormStage> = GetFieldNames<T>
+type FieldMapType<T extends IFormStage> = {[fieldName in GetFieldNames<T>]: string}
+type ErrorMapType<T extends IFormStage> = {[fieldName in GetFieldNames<T>]: string}
 export interface FormContext<T extends IFormStage> {
-    fields: {[fieldName in GetFieldNames<T>]: string}
-    updateField: (fieldName: GetFieldNames<T>, value: string) => void 
+    fields: FieldMapType<T>
+    updateField: (fieldName: FieldNameType<T>, value: string) => void 
     stage: number
     stages: T[]
-    errors: {[fieldName in GetFieldNames<T>]: string} | null
+    errors: ErrorMapType<T> | null
     totalStages: number 
     isFinish: boolean 
     reset: () => void 
@@ -26,26 +29,27 @@ export interface FormContext<T extends IFormStage> {
     back: () => void 
     hasNext: boolean
     hasBack: boolean
-    validateStage: (stage: number) => {[fieldName in GetFieldNames<T>]: string} | null
+    validateStage: (stage: number) => ErrorMapType<T> | null
     clearStage: () => void 
     submit: () => void
 }
 export function useForm<T extends IFormStage>(stages: T[]): FormContext<T> {
     const defaultState = stages.reduce((obj, stage) => {
-        Object.keys(stage).forEach((fieldName: GetFieldNames<T>) => {
+        Object.keys(stage).forEach((fieldName: FieldNameType<T>) => {
             obj[fieldName] = ''
             
         })
         return obj
-    }, {} as {[fieldName in GetFieldNames<T>]: string})
-    const [state, setState] = useState<{[fieldName in GetFieldNames<T>]: string}>(defaultState)
+    }, {} as FieldMapType<T>)
+
+    const [state, setState] = useState<FieldMapType<T>>(defaultState)
     const [stage, setStage] = useState(0)
     const [errors, setErrors] = useState<{[fieldName in GetFieldNames<T>]: string} | null>(null)
     const [isSubmited, setIsSubmited] = useState(false)
 
-    const isFinish = stage === stages.length && isSubmited
+    const isFinish = stage === stages.length - 1 && isSubmited
 
-    const updateField = useCallback((fieldName: GetFieldNames<T>, val: string) => {
+    const updateField = useCallback((fieldName: FieldNameType<T>, val: string) => {
         setState({...state, [fieldName]: val})
     }, [state]) 
 
@@ -57,10 +61,10 @@ export function useForm<T extends IFormStage>(stages: T[]): FormContext<T> {
 
     const clearStage = useCallback(() => {
         const fields = stages[stage]
-        setState({...state, ...Object.keys(fields).reduce((obj, k) => {
+        setState({...state, ...Object.keys(fields).reduce((obj, k: FieldNameType<T>) => {
             obj[k] = ''
             return obj
-        }, {} as any) })
+        }, {} as FieldMapType<T>) })
     }, [stage, state])
 
     const next = () => {
@@ -76,16 +80,16 @@ export function useForm<T extends IFormStage>(stages: T[]): FormContext<T> {
 
     const validateStage = useCallback((stage: number) => {
         const formStage = stages[stage]
-        let errors: {[fieldName in GetFieldNames<T>]: string} | null = null 
+        let errors: ErrorMapType<T> | null = null 
 
-        Object.keys(formStage).forEach((fieldName: GetFieldNames<T>) => {
-            if (formStage[fieldName].required && typeof state[fieldName] === 'string') {
+        Object.keys(formStage).forEach((fieldName: FieldNameType<T>) => {
+            if (formStage[fieldName].required && typeof formStage[fieldName] === 'string') {
                 errors = {...(errors??{} as any), [fieldName]: `"${String(fieldName)}" is required`}
             }
         })
         setErrors(errors)
         return errors
-    }, [])
+    }, [stages])
 
     const submit = useCallback(() => {
         const errs = validateStage(stage)

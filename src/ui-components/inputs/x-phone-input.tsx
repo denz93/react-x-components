@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import XInput from "./xinput";
+import {XInput} from "./xinput";
 import { FloatSection, Option, XSearchInput } from "./x-search-input";
 import { CountryCodeType, CountryDialMap, CountryType } from "../../libs/coutntry-dial-map";
 import { useEffect, useMemo, useState } from "react";
