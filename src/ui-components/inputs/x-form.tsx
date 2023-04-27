@@ -3,12 +3,20 @@ import { FormContext, IFormStage } from "../hooks/useForm";
 import {XInput} from "./xinput";
 import { useMemo } from "react";
 import { XButton } from "../buttons/x-button";
+import { H2, H3 } from "../texts/heading";
+import { XTooltip } from "../tooltips/x-tooltips";
 
-export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {
+export interface IXFormProps<TFormStage extends IFormStage> {
+    form: FormContext<TFormStage>
+    title?: string 
+
+}
+export function XForm<T extends IFormStage>({form, title}: IXFormProps<T>) {
     const { 
-        stage: currentStage, 
-        totalStages, 
-        stages, 
+        currentStage, 
+        totalStages,
+        stageNameList,
+        stageList, 
         fields, 
         updateField, 
         hasNext, 
@@ -18,19 +26,23 @@ export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {
         back,
         errors,
         validateStage,
-        isFinish
+        isFinish,
+        reset
     } = form
 
     const FormStageList = useMemo(() => {
-        return stages.map((stage, idx) => <StyledFormGroup key={idx} data-current={idx === currentStage}>
+        return stageList.map((stage, idx) => <StyledFormGroup key={idx} data-current={idx === currentStage}>
+            <H3>{Number.isSafeInteger(parseInt(stageNameList[idx])) ? `Step ${stageNameList[idx]}` : stageNameList[idx]}</H3>
             {Object.keys(stage).map(fieldName => {
-                const {type, label, required} = stage[fieldName]
+                const {type, label} = stage[fieldName]
                 return <InputWrapper 
                     data-has-error={errors && fieldName in errors}
-                    key={fieldName} 
+                    key={fieldName}
                 >
+                    {errors && fieldName in errors && <Error type="error" message={errors[fieldName]}/>} 
                     <XInput
-                        type={stage[fieldName].type} 
+                        disabled={isFinish}
+                        type={type} 
                         placeholder={label??fieldName}
                         value={fields[fieldName]}
                         onChange={(val) => updateField(fieldName, val)}
@@ -38,30 +50,35 @@ export function XForm<T extends IFormStage>({form}: {form: FormContext<T>}) {
                 </InputWrapper>
             })}
         </StyledFormGroup>)
-    }, [stages, currentStage])
+    }, [stageList, currentStage, errors, isFinish])
     
-    return <StyledForm>
-        <p>Form step {currentStage + 1}/{totalStages}</p>
+    return <StyledForm >
+        <H2>{title}</H2>
         <StyledFormGroupWrapper>
             { FormStageList }
         </StyledFormGroupWrapper>
         <ActionList>
-            {!isFinish && hasBack && <XButton type="button" disabled={!hasBack} onClick={() => {
-                back()
-            }}>Back</XButton>}
+            {!isFinish && <>
+                {hasBack && <XButton type="button" disabled={!hasBack} onClick={() => {
+                    back()
+                }}>Back</XButton>}
 
-            {hasNext && <XButton type="button" disabled={!hasNext} onClick={() => { 
-                const err = validateStage(currentStage)
-                !err && next()
-            }}>Next</XButton>}
+                {hasNext && <XButton type="button" disabled={!hasNext} onClick={() => { 
+                    const err = validateStage(currentStage)
+                    !err && next()
+                }}>Next</XButton>}
 
-            {!hasNext && <XButton type="button" onClick={() => {
-                const err = validateStage(currentStage)
-                !err && submit()
-            }}>Submit</XButton>}
+                {!hasNext && <XButton type="button" onClick={() => {
+                    const err = validateStage(currentStage)
+                    !err && submit()
+                }}>Submit</XButton>}
+            </>}
             
-            <div></div>
+
+            {isFinish && <XButton type="button" onClick={() => reset()}>Reset</XButton>}
+            
         </ActionList>
+        <div>Finish: {isFinish ? 'true' : 'false'}</div>
     </StyledForm>
 }
 
@@ -119,9 +136,16 @@ const Shake = keyframes`
 const InputWrapper = styled.div`
     position: relative;
     height: fit-content;
+    border-radius: ${props => props.theme.XComponent?.__borderRadius('input')??'0'};
     &[data-has-error="true"] {
         position: relative;
         animation: ${Shake} 1s ease-in-out;
-        outline: red 1px solid;
+        box-shadow: 0 0 1px 2px ${props => props.theme.XComponent?.global?.color?.error??'currentColor'};
     }
+`
+
+const Error = styled(XTooltip)`
+    left: calc(100% + 1em);
+    top: 50%;
+    transform: translateY(-.5em);
 `

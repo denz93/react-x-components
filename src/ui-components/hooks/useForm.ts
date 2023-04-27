@@ -1,112 +1,123 @@
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { Validator } from "../../libs/validator"
 
 export interface IFormField {
     type: 'text' | 'password'
-    required?: boolean
     label?: string
+    defaultValue?: string
+    constraints?: Validator<'string'>
 }
 
 export interface IFormStage {
     [fieldName: string]: IFormField
 }
 
-export type IUseFormProps = IFormStage[]
-
+type StageMap<T extends IFormStage> = {[stageName: string]: T}
 type GetFieldNames<T extends IFormStage> = keyof T
 type FieldNameType<T extends IFormStage> = GetFieldNames<T>
 type FieldMapType<T extends IFormStage> = {[fieldName in GetFieldNames<T>]: string}
 type ErrorMapType<T extends IFormStage> = {[fieldName in GetFieldNames<T>]: string}
+
+export type IUseFormProps<TFormStage extends IFormStage> = StageMap<TFormStage> | TFormStage[]
+
 export interface FormContext<T extends IFormStage> {
     fields: FieldMapType<T>
     updateField: (fieldName: FieldNameType<T>, value: string) => void 
-    stage: number
-    stages: T[]
+    currentStage: number
+    stageNameList: string[]
+    stageList: T[]
     errors: ErrorMapType<T> | null
     totalStages: number 
     isFinish: boolean 
+    hasNext: boolean
+    hasBack: boolean
     reset: () => void 
     next: () => void 
     back: () => void 
-    hasNext: boolean
-    hasBack: boolean
     validateStage: (stage: number) => ErrorMapType<T> | null
-    clearStage: () => void 
+    clearStage: (stageIdx: number) => void 
     submit: () => void
+    setErrors: (errors: ErrorMapType<T> | null) => void
 }
-export function useForm<T extends IFormStage>(stages: T[]): FormContext<T> {
-    const defaultState = stages.reduce((obj, stage) => {
+export function useForm<T extends IFormStage>(initialStageMap: IUseFormProps<T>): FormContext<T> {
+    const stageNameList = useMemo(() => Array.isArray(initialStageMap) ? new Array(initialStageMap.length).fill(0).map((_, idx) => `${idx}`) : Object.keys(initialStageMap), [])
+    const stageList = useMemo(() => Array.isArray(initialStageMap) ? initialStageMap : Object.values(initialStageMap), [])
+    
+    const defaultState = useMemo(() => stageList.reduce((obj, stage) => {
         Object.keys(stage).forEach((fieldName: FieldNameType<T>) => {
-            obj[fieldName] = ''
-            
+            obj[fieldName] = stage[fieldName].defaultValue ?? ''
         })
         return obj
-    }, {} as FieldMapType<T>)
+    }, {} as FieldMapType<T>), [])
 
-    const [state, setState] = useState<FieldMapType<T>>(defaultState)
-    const [stage, setStage] = useState(0)
+    const [fieldMap, setFieldMap] = useState<FieldMapType<T>>(defaultState)
+    const [currentStage, setCurrentStage] = useState(0)
     const [errors, setErrors] = useState<{[fieldName in GetFieldNames<T>]: string} | null>(null)
     const [isSubmited, setIsSubmited] = useState(false)
 
-    const isFinish = stage === stages.length - 1 && isSubmited
+    const isFinish = currentStage === stageList.length - 1 && isSubmited
+    const hasNext = currentStage < stageList.length - 1
+    const hasBack = currentStage > 0
 
     const updateField = useCallback((fieldName: FieldNameType<T>, val: string) => {
-        setState({...state, [fieldName]: val})
-    }, [state]) 
+        setFieldMap((fieldMap) => ({...fieldMap, [fieldName]: val}))
+    }, []) 
 
-    const reset = () => {
-        setStage(0)
-        setIsSubmited(false)
-        setState(defaultState)
-    }
-
-    const clearStage = useCallback(() => {
-        const fields = stages[stage]
-        setState({...state, ...Object.keys(fields).reduce((obj, k: FieldNameType<T>) => {
+    const reset = useCallback(() => {
+        setCurrentStage(() => 0)
+        setIsSubmited(() => false)
+        setFieldMap(() => defaultState)
+    }, [])
+    
+    const clearStage = useCallback((stageIdx: number) => {
+        const fields = stageList[stageIdx]
+        setFieldMap((fieldMap) => ({...fieldMap, ...Object.keys(fields).reduce((obj, k: FieldNameType<T>) => {
             obj[k] = ''
             return obj
-        }, {} as FieldMapType<T>) })
-    }, [stage, state])
+        }, {} as FieldMapType<T>) }))
+    }, [])
 
-    const next = () => {
-        setStage((stage) => stage < stages.length - 1 ? stage + 1 : stage)
-    }
+    const next = useCallback(() => {
+        setCurrentStage((stage) => stage < stageList.length - 1 ? stage + 1 : stage)
+    }, [])
 
-    const back = () => {
-        setStage((stage) => stage > 0 ? stage - 1 : stage)
-    }
+    const back = useCallback(() => {
+        setCurrentStage((stage) => stage > 0 ? stage - 1 : stage)
+    }, [])
 
-    const hasNext = stage < stages.length - 1
-    const hasBack = stage > 0
 
-    const validateStage = useCallback((stage: number) => {
-        const formStage = stages[stage]
+    const validateStage = useCallback((stageIdx: number) => {
+        const formStage = stageList[stageIdx]
         let errors: ErrorMapType<T> | null = null 
-
         Object.keys(formStage).forEach((fieldName: FieldNameType<T>) => {
-            if (formStage[fieldName].required && typeof formStage[fieldName] === 'string') {
-                errors = {...(errors??{} as any), [fieldName]: `"${String(fieldName)}" is required`}
-            }
+            const stage = formStage[fieldName]
+            const err = stage.constraints?.safeValidate(fieldMap[fieldName])
+            if (err)
+                errors = {...(errors??{} as any), [fieldName]: err}
+            
         })
         setErrors(errors)
         return errors
-    }, [stages])
+    }, [stageList, fieldMap])
 
     const submit = useCallback(() => {
-        const errs = validateStage(stage)
+
+        const errs = validateStage(stageList.length-1)
         if (errs === null || errs === undefined) {
             setIsSubmited(true)
         } else {
             setErrors(errs)
         }
-    }, [stage])
+    }, [validateStage])
 
     return { 
-        fields: state, 
+        fields: fieldMap, 
         updateField,
-        stage,
-        stages,
+        currentStage,
+        stageNameList,
+        stageList,
         errors,
-        totalStages: stages.length, 
+        totalStages: stageList.length, 
         isFinish, 
         reset, 
         clearStage,
@@ -115,7 +126,8 @@ export function useForm<T extends IFormStage>(stages: T[]): FormContext<T> {
         back,
         hasNext,
         hasBack,
-        validateStage
+        validateStage,
+        setErrors
     }
 }
 

@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import styled, { keyframes } from 'styled-components'
 import { useXTheme } from '../createTheme'
 import { withGlowBorderEffect } from '../higher-order-components/with-glow-effect'
+import { safeInvoke } from '../../libs/safe-invoker'
 
 const HTML_SPACE_CHAR = '&nbsp;'
 
@@ -20,7 +21,7 @@ export interface IXInputProps  {
     value: string 
     placeholder: string
     type: "text" | "password"
-
+    disabled: boolean
     /**
      * @description
      * 
@@ -50,10 +51,11 @@ export interface IXInputProps  {
 }
 
 
-export function _XInput ({
+export function XInputRaw ({
     placeholder = '', 
     type = 'text',
     displayTemplate = '',
+    value: propValue,
     onBlur,
     onChange,
     onClick,
@@ -63,12 +65,13 @@ export function _XInput ({
 
     const theme = useXTheme()
     const [value, setValue] = useState('')
-    const [cursor, setCursor] = useState(0)
     const [composition, setComposition] = useState<number | null>(null)
     const [focus, setFocus] = useState(false)
     const [selection, setSelection] = useState<[number, number]>([0,0])
     const inputRef = useRef<HTMLDivElement>(null)
     const builtinInputRef = useRef<HTMLInputElement>(null)
+
+    const cursor = selection[0]
 
     const displayValue = useMemo(
         () => formatValue(value, displayTemplate), 
@@ -107,7 +110,7 @@ export function _XInput ({
                     {theme?.input?.caret ?? '_'}
                 </Char>}
         </>
-    } , [displayValue, composition, displaySelection, displayCursor, displayTemplate])  
+    } , [displayValue, composition, displaySelection, displayCursor])  
 
     const compositionCallback = useCallback((event: React.CompositionEvent) => {
         switch(event.type) {
@@ -119,26 +122,26 @@ export function _XInput ({
                 break;
            
         }
-    }, [value, composition, cursor])
+    }, [value])
 
     const builtInInputChangeCallback = useCallback((event: FormEvent<HTMLInputElement>) => {
-        setValue(event.currentTarget.value);
-        onChange && onChange(getValueByTemplate(event.currentTarget.value, displayTemplate))
+        const newVal = event.currentTarget.value
+        const valueByTemplate = getValueByTemplate(newVal, displayTemplate)
+        setValue(valueByTemplate);
+        safeInvoke(onChange, valueByTemplate)
     }, [onChange, displayTemplate])
 
     const builtInSelectionCallback = useCallback((event: SyntheticEvent<HTMLInputElement>) => {
         const {selectionStart, selectionEnd} = event.currentTarget
-        if (selectionStart != selection[0] || selectionEnd != selection[1]) {
-            setSelection([selectionStart??0, selectionEnd??0])
-            
-            event.currentTarget.offsetLeft
-        }
 
-        if (selectionStart === null) return 
-        setCursor(selectionStart)
-
+        const newSelection = [selectionStart??0, selectionEnd??0] as [number, number]
+        setSelection(
+            (selection) => selection[0] !== newSelection[0] || selection[1] !== newSelection[1] 
+                ? newSelection
+                : selection
+        )
         
-    }, [value, selection])
+    }, [])
 
 
     useEffect(() => {
@@ -154,45 +157,40 @@ export function _XInput ({
     },[cursor, value])
 
     useEffect(() => {
-        const val = typeof props.value !== 'string' ? '' : props.value;
+        const val = typeof propValue !== 'string' ? '' : propValue
         setValue(val)
-    }, [props.value])
-
-    useEffect(() => {
-        if (focus)
-            builtinInputRef.current?.focus()
-    }, [focus])
+    }, [propValue])
 
     return <InputWrapper
         {...props }
         tabIndex={0} 
         onBlur={() => {
-            const forceFocus = onBlur && onBlur()
-            if (forceFocus) {
-                setTimeout(() => {builtinInputRef.current?.focus()}, 1)
-            } else {
-                setComposition(null)
-                setFocus(false)
-            }
+            setFocus(false)
+            safeInvoke(onBlur)
         }}
-        onClick={() => {
-            onClick && onClick()
-        }}
-        onFocus={() => {
+        onClick={onClick}
+        onFocusCapture={() => {
             setFocus(true);
-            onFocus && onFocus()
+            safeInvoke(onFocus)
+            builtinInputRef.current?.focus()
         }}
         onCompositionEnd={compositionCallback}
         onCompositionUpdate={compositionCallback}
         onCompositionStart={compositionCallback}
         className={focus ? 'focus' : ''}
-        onKeyDown={() => setCursor(builtinInputRef.current?.selectionStart??0)}
+        onKeyDown={() => {
+            const selectionStart = builtinInputRef.current?.selectionStart
+            setSelection((selection) => 
+                Number.isSafeInteger(selectionStart) && selectionStart !== selection[0] 
+                ? [selectionStart as number, selection[1]] 
+                : selection
+            )
+        }}
         >
         <BuiltInInput 
             ref={builtinInputRef}  
             onInput={builtInInputChangeCallback}
             onSelect={builtInSelectionCallback}
-            onBlur={() => { setFocus(false)}}
             value={value}
             type={type}
             name={type}
@@ -209,7 +207,8 @@ export function _XInput ({
     </InputWrapper>
 }
 
-export const XInput = withGlowBorderEffect(_XInput)
+export const XInput = React.memo(XInputRaw)
+XInput.displayName = 'XInput'
 
 const BlinkAnimation = keyframes`
     0% {
@@ -246,6 +245,12 @@ const InputWrapper = styled.div`
     width: auto;
     height: fit-content;
     display: grid;
+
+    &[disabled] {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
 
     &:after {
         content: '';

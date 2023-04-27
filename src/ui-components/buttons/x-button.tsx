@@ -1,7 +1,6 @@
 import styled from "styled-components"
-import { withGlowBorderEffect } from "../higher-order-components/with-glow-effect"
 
-const Button = styled.button.attrs({type: 'button'})`
+export const XButton = styled.button.attrs({type: 'button'})`
   color: ${props => props.theme.XComponent?.__color('button')};
   padding: .7em 1em;
   outline-color: transparent;
@@ -20,6 +19,3 @@ const Button = styled.button.attrs({type: 'button'})`
   }
 
 `
-
-export const XButton = withGlowBorderEffect(Button)
-

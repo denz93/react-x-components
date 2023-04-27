@@ -1,9 +1,10 @@
 import styled from "styled-components";
 import {XInput} from "./xinput";
-import { FloatSection, Option, XSearchInput } from "./x-search-input";
+import { FloatSection, Option, XDropdownInput } from "./x-dropdown-input";
 import { CountryCodeType, CountryDialMap, CountryType } from "../../libs/coutntry-dial-map";
 import { useEffect, useMemo, useState } from "react";
 import { IXBaseInputProps } from "../interfaces";
+import React from "react";
 
 export type IFlagOption = CountryType
 
@@ -12,15 +13,16 @@ export interface IXPhoneInputProps extends IXBaseInputProps<string> {
     allowedCountries: CountryCodeType[]
     phoneTemplate: string
 }
-export function XPhoneInput ({
+export function XPhoneInputRaw ({
     allowedCountries = [],
-    phoneTemplate = '',
+    phoneTemplate = '$$$-$$$-$$$$',
     value,
     onChange,
     ...props}: Partial<IXPhoneInputProps>) {
     const [countryCode, setCountryCode] = useState(props.defautCountryCode??null)
     const [phonenumber, setPhonenumber] = useState('')
-    const [countryList, setCountryList] = useState<CountryType[]>([])
+
+    const countryList = useMemo(() => getCountryListByCodes(allowedCountries), [allowedCountries])
     
     const selectedCountryOption = useMemo(
         () => flagOptions.find(o => o.code.toLowerCase() === countryCode?.toLowerCase()) ?? flagOptions[0], 
@@ -43,16 +45,6 @@ export function XPhoneInput ({
 
         setPhonenumber(newValue.replace(selectedCountryOption.dial_code, ''))
     }, [value])
-
-    useEffect(() => {
-        if (allowedCountries.length === 0) {
-            setCountryList(flagOptions)
-        } else {
-            setCountryList(
-                flagOptions.filter(country => allowedCountries.includes(country.code.toLowerCase() as any))
-            )
-        }
-    }, [allowedCountries])
 
     return <Main {...props} >
         <Flag 
@@ -84,9 +76,17 @@ export function XPhoneInput ({
         />
     </Main>
 }
+export const XPhoneInput = React.memo(XPhoneInputRaw)
+XPhoneInput.displayName = 'XPhoneInput'
 
 const flagOptions: Array<IFlagOption> = Object.values(CountryDialMap)
-
+const getCountryListByCodes = (codes: CountryCodeType[]) => {
+    if (codes.length === 0) {
+        return flagOptions
+    } else {
+        return flagOptions.filter(country => codes.includes(country.code.toLowerCase() as any))
+    }
+}
 const Main = styled.div`
     position: relative;
     display: grid;
@@ -95,9 +95,10 @@ const Main = styled.div`
     grid-template-columns: 3fr 6fr;
 `
 
-const Flag = styled(XSearchInput<IFlagOption>)`
+const Flag = styled(XDropdownInput<IFlagOption>)`
    ${FloatSection} {
     width: 250%;
+    right: auto;
     gap: 1em;
     ${Option} {
         display: inline-block;

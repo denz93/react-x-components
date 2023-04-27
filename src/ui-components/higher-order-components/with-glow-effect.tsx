@@ -11,6 +11,10 @@ type PropsOfFunctionComponent<T extends ISupportedFC> = T extends React.Function
 type IInstrinsicElement<T extends IInstrinsicTag> = JSX.IntrinsicElements[T]
 export type IGlowBorderEffectReturn<TParam extends IWithGlowBorderEffectParam> = TParam extends ISupportedFC ? React.FunctionComponent<PropsOfFunctionComponent<TParam>> : TParam extends IInstrinsicTag ? React.ForwardRefExoticComponent<IInstrinsicElement<TParam>>: never
 
+const Main =  styled('div')`
+    position: relative;
+    
+  `
 const EffectWrapper = styled.svg`
 --wrapper-offset: 20px;
 --effect-width: 15px;
@@ -31,13 +35,6 @@ const GlowVisibility = keyframes`
     opacity: 1;
   }
 `
-
-export function withGlowBorderEffect<TParam extends IWithGlowBorderEffectParam>(fc: TParam): IGlowBorderEffectReturn<TParam> {
-  const Main =  styled('div')`
-    position: relative;
-    
-  `
-
   //@ts-ignore
   const EffectLine = styled.rect.attrs({pathLength: 100})`
     position: absolute;
@@ -63,9 +60,9 @@ export function withGlowBorderEffect<TParam extends IWithGlowBorderEffectParam>(
       z-index: -1;
     }
   `
-
+export function withGlowBorderEffect<TParam extends IWithGlowBorderEffectParam>(fc: TParam): IGlowBorderEffectReturn<TParam> {
   //@ts-ignore
-  return typeof fc === 'function' ? function (props: TParam extends ISupportedFC ? PropsOfFunctionComponent<TParam> : never) {
+  const wrapperFunc = typeof fc === 'function' ? function (props: TParam extends ISupportedFC ? PropsOfFunctionComponent<TParam> : never) {
     const ref = useRef<HTMLDivElement>(null)
     const [rx, setRx] = useState('0')
     useEffect(() => {
@@ -100,5 +97,12 @@ export function withGlowBorderEffect<TParam extends IWithGlowBorderEffectParam>(
         </EffectWrapper>
       </Main>
   })
+  
+  //@ts-ignore
+  const componentName = typeof fc === 'function' ? fc.displayName || fc.name || 'Component' : fc
+  //@ts-ignore
+  wrapperFunc.displayName = `withGlowEffect(${componentName})`
+  //@ts-ignore
+  return React.memo(wrapperFunc)
 }
 

@@ -1,6 +1,7 @@
 import styled from "styled-components"
 import {XInput} from "./xinput"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React from 'react'
 
 const Main = styled.div`
   position: relative;
@@ -8,31 +9,50 @@ const Main = styled.div`
   color: ${props => props.theme.XComponent?.__color('input')??'currentColor'};
 `
 
-export const FloatSection = styled.div<{shouldShow: boolean}>`
+export const FloatSection = styled.div`
   background-color: ${props => props.theme.XComponent?.global?.background??'transparent'};
   position: absolute;
   display: grid;
   grid-template-columns: 1fr;
-  padding: .7em 1.5em;
-  margin-top: 1em;
+  align-items: center;
+  padding: .7em 1em;
+  gap: 1em;
   transition: filter .3s ease-in-out, transform .5s ease-in-out;
   filter: blur(10px) ;
+  inset:0;
+  height: 10em;
+  top: calc(100% + 1em);
   transform: scale(0);
-  max-height: 5em;
   overflow: hidden scroll;
   box-shadow: 0 0  5px 1px currentColor;
   z-index: 10;
-  ${props => props.shouldShow && `
+  transition: filter .2s ease-in-out, transform .4s ease-in-out;
+  transform-origin: 50% 0%;
+  &[data-should-show="true"] {  
     filter: blur(0) ;
     transform: scale(1);
-    transition: filter .3s ease-in-out, transform .1s ease-in-out;
-  `}
+    transition: filter .5s ease-in-out, transform .4s ease-in-out;
+  }
+
+  &:before, &:after {
+    content: '--- Option List ---';
+    display: block;
+    opacity: .4;
+    font-weight: bolder;
+    text-transform: capitalize;
+  }
+
+  &:after {
+    content: '--- end ---';
+  }
+
 `
 export const Option = styled.div`
   position: relative;
   cursor: pointer;
   user-select: none;
   display: flex;
+  align-items: center;
   gap: 1em;
   flex-basis: fit-content;
   flex-wrap: wrap;
@@ -109,24 +129,25 @@ const defaultOptionMatchStrategy = <T,>(option: T, searchValue: string) => {
   return String(option).toLowerCase().includes(searchValue.toLowerCase())
 }
 
-export function XSearchInput<T>({
+export function XDrowdownInputRaw<T>({
   optionFormater = defaultOptionFormater<T>, 
   optionDisplayFormater = defaultOptionDisplayFormater<T>,
   optionMatchStrategy = defaultOptionMatchStrategy<T>,
   optionList,
   onOptionSelected,
+  placeholder,
+  defaultOption,
   ...props}: Partial<IXSearchInputProps<T>>
   ) {
   const [inputFocus, setInputFocus] = useState(false)
   const [optionFocus, setOptionFocus] = useState(false)
-  const [selectedOption, setSelectedOption] = useState<T|null>(props.defaultOption??null)
+  const [selectedOption, setSelectedOption] = useState<T|null>(defaultOption??null)
   const [searchValue, setSearchValue] = useState('')
   const floatSectionRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
   const focus = inputFocus || optionFocus
   
-  const filteredOptionList = 
-    Array.isArray(optionList) 
+  const filteredOptionList = useMemo(() => Array.isArray(optionList) 
     ? optionList?.filter(option => {
       try {
         return optionMatchStrategy(option, searchValue)
@@ -142,31 +163,32 @@ export function XSearchInput<T>({
         return false
       }
     })
-    : []
+    : [], 
+  [optionList, optionMatchStrategy, searchValue])
+    
   const searchValueChangeCallback = useCallback((val: string) => {
     setSearchValue(val)
     
   }, [])
 
   useEffect(() => {
-    setSelectedOption(props.defaultOption ?? null)
-  }, [props.defaultOption])
+    setSelectedOption(defaultOption ?? null)
+  }, [defaultOption])
   return <Main
     {...props}
     ref={mainRef}
-    tabIndex={0}
-    onBlurCapture={(ev) => {
-      if (ev.relatedTarget === mainRef.current || ev.relatedTarget === floatSectionRef.current) {
-        setInputFocus(true)
-        setOptionFocus(true)
-      } else {
-        setInputFocus(false)
-        setOptionFocus(false)
-      }
-    }}
+    // onBlurCapture={(ev) => {
+    //   if (ev.relatedTarget === mainRef.current || ev.relatedTarget === floatSectionRef.current) {
+    //     setInputFocus(true)
+    //     setOptionFocus(true)
+    //   } else {
+    //     setInputFocus(false)
+    //     setOptionFocus(false)
+    //   }
+    // }}
   >
     <XInput 
-      placeholder={props.placeholder}
+      placeholder={placeholder}
       value={
         focus 
         ? searchValue 
@@ -177,16 +199,18 @@ export function XSearchInput<T>({
       onChange={searchValueChangeCallback}
       onFocus={() => { setInputFocus(true);}}
       onBlur={() => {
-        // if (!optionFocus) setInputFocus(false)
-        // return optionFocus
+        setInputFocus(false)
       }}
       />
     <Arrow data-up={focus}>▼</Arrow>
 
     <FloatSection 
       ref={floatSectionRef}
-      shouldShow={focus}
+      data-should-show={focus}
       role={'listbox'}
+      tabIndex={0}
+      onFocus={() => setOptionFocus(true)}
+      onBlur={() => setOptionFocus(false)}
       >
       { filteredOptionList.map((option, idx) => 
         <Option 
@@ -206,3 +230,7 @@ export function XSearchInput<T>({
     </FloatSection>
   </Main>
 }
+
+export const XDropdownInput = React.memo(XDrowdownInputRaw) as typeof XDrowdownInputRaw
+//@ts-ignore
+XDropdownInput.displayName = 'XDropdownInput'

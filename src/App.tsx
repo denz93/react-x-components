@@ -2,10 +2,11 @@ import { useState } from 'react'
 import './App.css'
 import { createTheme } from './ui-components/createTheme'
 import {XInput} from './ui-components/inputs/xinput'
-import { XSearchInput } from './ui-components/inputs/x-search-input'
+import { XDropdownInput } from './ui-components/inputs/x-dropdown-input'
 import { XPhoneInput } from './ui-components/inputs/x-phone-input'
 import { XForm } from './ui-components/inputs/x-form'
 import { useForm } from './ui-components/hooks/useForm'
+import { Validator } from './libs/validator'
 
 const ThemeProvider = createTheme({
   // button: {
@@ -25,10 +26,32 @@ function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
-  const formContext = useForm([
-    { firstName: { type: 'text' }, lastName: {type: 'text' }},
-    { email: { type: 'text', label: 'Email', required: true }}
-  ])
+  const formContext = useForm({
+    'Personal Info': { 
+      firstName: { 
+        type: 'text', 
+        constraints: Validator.type('string').required().max(100) 
+      }, 
+      lastName: {
+        type: 'text', 
+        constraints: Validator.type('string').required().max(100) 
+      }
+    },
+    'Login': { 
+      email: { 
+        type: 'text', 
+        label: 'Email', 
+        constraints: Validator
+          .type('string', {regex: 'Value must be an email'})
+          .required()
+          .regex("^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$") 
+      }
+    }
+  })
+
+
+
+
 
   const [options, setOptions] = useState({
     "1": { title: 'VueJS' },
@@ -63,7 +86,7 @@ function App() {
         </div>
 
         <div style={{width: '15em'}}>
-          <XSearchInput 
+          <XDropdownInput 
             optionList={options} 
             placeholder='Select a option'
             optionDisplayFormater={(op) => op.title}
@@ -83,7 +106,7 @@ function App() {
         </div>
         
         <div>
-          <XForm form={formContext}/>
+          <XForm form={formContext} title='Form Title'/>
         </div>
       </div>
      </ThemeProvider>
