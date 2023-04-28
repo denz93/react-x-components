@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react"
 import { Validator } from "../../libs/validator"
 
 export interface IFormField {
-    type: 'text' | 'password'
+    type: 'text' | 'password' | 'phone'
     label?: string
     defaultValue?: string
     constraints?: Validator<'string'>
@@ -21,7 +21,7 @@ type ErrorMapType<T extends IFormStage> = {[fieldName in GetFieldNames<T>]: stri
 export type IUseFormProps<TFormStage extends IFormStage> = StageMap<TFormStage> | TFormStage[]
 
 export interface FormContext<T extends IFormStage> {
-    fields: FieldMapType<T>
+    fieldMap: FieldMapType<T>
     updateField: (fieldName: FieldNameType<T>, value: string) => void 
     currentStage: number
     stageNameList: string[]
@@ -111,7 +111,7 @@ export function useForm<T extends IFormStage>(initialStageMap: IUseFormProps<T>)
     }, [validateStage])
 
     return { 
-        fields: fieldMap, 
+        fieldMap, 
         updateField,
         currentStage,
         stageNameList,

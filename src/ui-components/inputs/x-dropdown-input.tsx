@@ -46,6 +46,14 @@ export const FloatSection = styled.div`
     content: '--- end ---';
   }
 
+  &::-webkit-scrollbar {
+    display: none !important;
+    scrollbar-width: none;
+  }
+  &{
+    scrollbar-width: none;
+  }
+
 `
 export const Option = styled.div`
   position: relative;

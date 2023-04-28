@@ -4,24 +4,15 @@ import styled, { keyframes } from 'styled-components'
 import { useXTheme } from '../createTheme'
 import { withGlowBorderEffect } from '../higher-order-components/with-glow-effect'
 import { safeInvoke } from '../../libs/safe-invoker'
+import { IXBaseInputProps } from '../interfaces'
 
 const HTML_SPACE_CHAR = '&nbsp;'
 
 
 
-export interface IXInputProps  {
-    onClick: () => void 
-    onFocus: () => void 
-    /**
-     * 
-     * @returns true if you want to re-focus 
-     */
-    onBlur: () => void | boolean
-    onChange: (value: string) => void 
-    value: string 
-    placeholder: string
+export interface IXInputProps extends IXBaseInputProps<string> {
     type: "text" | "password"
-    disabled: boolean
+
     /**
      * @description
      * 
@@ -56,6 +47,7 @@ export function XInputRaw ({
     type = 'text',
     displayTemplate = '',
     value: propValue,
+    name,
     onBlur,
     onChange,
     onClick,
@@ -91,7 +83,7 @@ export function XInputRaw ({
 
     const display = useMemo(() => {
         let charList = displayValue.split('').map(c => c === ' ' ? HTML_SPACE_CHAR : c)
-        charList = type === 'password' ? charList.map(c => '*') : charList
+        charList = type === 'password' ? charList.map((c, idx) => idx === displayCursor && focus ? c : '*') : charList
        
         return <>
             {charList.map((c, idx) => <Char
@@ -110,7 +102,7 @@ export function XInputRaw ({
                     {theme?.input?.caret ?? '_'}
                 </Char>}
         </>
-    } , [displayValue, composition, displaySelection, displayCursor])  
+    } , [displayValue, composition, displaySelection, displayCursor, focus])  
 
     const compositionCallback = useCallback((event: React.CompositionEvent) => {
         switch(event.type) {
@@ -193,7 +185,7 @@ export function XInputRaw ({
             onSelect={builtInSelectionCallback}
             value={value}
             type={type}
-            name={type}
+            name={name}
         />    
         <Input ref={inputRef}
             typeof={type}

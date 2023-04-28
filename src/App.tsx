@@ -35,6 +35,11 @@ function App() {
       lastName: {
         type: 'text', 
         constraints: Validator.type('string').required().max(100) 
+      },
+      phoneNumber: {
+        type: 'phone',
+        label: 'Phone Number',
+        constraints: Validator.type('string').required()
       }
     },
     'Login': { 
@@ -45,6 +50,12 @@ function App() {
           .type('string', {regex: 'Value must be an email'})
           .required()
           .regex("^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$") 
+      },
+      password: {
+        type: 'password',
+        label: 'Password',
+        constraints: Validator.type('string', { regex: `8-20 characters
+        Includes Uppercase, LowerCase, Digit` }).min(8).max(20).regex('^(?=.*[A-Z]+.*)((?=.*[a-z]+.*))(?=.*[0-9]+.*).{8,20}$')
       }
     }
   })

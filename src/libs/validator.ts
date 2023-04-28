@@ -3,9 +3,12 @@ type GetTypeFromPrimitive<T extends PrimitiveType> =
   T extends 'string' ? string :
   T extends 'number' ? number :
   T extends 'boolean' ? boolean : never
-
-type Metadata = {
-  field: string
+type ErrorTemplateType = {
+  required: string 
+  type: string 
+  min: string 
+  max: string 
+  regex: string
 }
 
 export class Validator<TPrimitiveType extends PrimitiveType> {
@@ -14,8 +17,7 @@ export class Validator<TPrimitiveType extends PrimitiveType> {
   private _max: number 
   private _regex: RegExp
   private _required: boolean = false
-  private _metadata: Metadata
-  private _errors = {
+  private _errors: ErrorTemplateType = {
     required: 'Required value is missing',
     type: 'Value must be ${type}',
     min: 'Value must be larger or equal than ${min}',
@@ -31,7 +33,7 @@ export class Validator<TPrimitiveType extends PrimitiveType> {
     regex: 'Value must be match pattern ${regex}'
   } as const
 
-  private constructor(errors: Partial<typeof Validator.DEFAULT_ERRORS> = {}) {
+  private constructor(errors: Partial<ErrorTemplateType> = {}) {
     this._errors = {...Validator.DEFAULT_ERRORS, ...errors }
   }
 
@@ -100,7 +102,7 @@ export class Validator<TPrimitiveType extends PrimitiveType> {
     return null
   }
 
-  static type<TPrimitiveType extends PrimitiveType> (t: TPrimitiveType, errors: {} = {}) {
+  static type<TPrimitiveType extends PrimitiveType> (t: TPrimitiveType, errors: Partial<ErrorTemplateType> = {}) {
     const validator = new Validator<TPrimitiveType>(errors)
     return validator.type(t)
   }

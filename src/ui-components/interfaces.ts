@@ -45,8 +45,10 @@ export interface IXBaseInputProps<T> {
     onChange: (value: T) => void 
     onFocus: () => void 
     onBlur: () => void 
+    onClick: () => void
 
     placeholder: string 
     value: T 
-
+    name: string 
+    disabled: boolean
 }

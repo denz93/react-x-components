@@ -51,7 +51,7 @@ export function XTooltip({
       onFocus={() => setIsShow(true)}
       onBlur={() => setIsShow(false)}
       
-      >ⓘ</Icon>
+      ></Icon>
     <Content 
       ref={contentRef}
       data-is-show={isShow}
@@ -76,6 +76,7 @@ const Content = styled.div`
   position: absolute;
   display: block;
   top: 50%;
+  width: 300px;
   transform: translateY(-50%);
   opacity: 0;
   left: 2em;
@@ -103,4 +104,17 @@ const Icon = styled.div`
   z-index: 10;
   user-select: none;
   cursor: pointer;
+
+  &:before {
+    content: '!';
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid;
+    border-radius: 10rem;
+  }
 `

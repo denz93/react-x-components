@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { XButton } from "../buttons/x-button";
 import { H2, H3 } from "../texts/heading";
 import { XTooltip } from "../tooltips/x-tooltips";
+import { XPhoneInput } from "./x-phone-input";
 
 export interface IXFormProps<TFormStage extends IFormStage> {
     form: FormContext<TFormStage>
@@ -17,7 +18,7 @@ export function XForm<T extends IFormStage>({form, title}: IXFormProps<T>) {
         totalStages,
         stageNameList,
         stageList, 
-        fields, 
+        fieldMap, 
         updateField, 
         hasNext, 
         next, 
@@ -40,17 +41,25 @@ export function XForm<T extends IFormStage>({form, title}: IXFormProps<T>) {
                     key={fieldName}
                 >
                     {errors && fieldName in errors && <Error type="error" message={errors[fieldName]}/>} 
-                    <XInput
+                    { (type === 'text' || type === 'password') && <XInput
                         disabled={isFinish}
                         type={type} 
                         placeholder={label??fieldName}
-                        value={fields[fieldName]}
+                        value={fieldMap[fieldName]}
                         onChange={(val) => updateField(fieldName, val)}
-                    />
+                    />}
+                    {type === 'phone' && <XPhoneInput
+                        value={fieldMap[fieldName]}
+                        defautCountryCode={'us'}
+                        allowedCountries={['us']}
+                        phoneTemplate={'$$$-$$$-$$$$'}
+                        placeholder={label}
+                        onChange={(val) => updateField(fieldName, val)}
+                    />}
                 </InputWrapper>
             })}
         </StyledFormGroup>)
-    }, [stageList, currentStage, errors, isFinish])
+    }, [stageList, currentStage, errors, isFinish, fieldMap])
     
     return <StyledForm >
         <H2>{title}</H2>
@@ -140,7 +149,7 @@ const InputWrapper = styled.div`
     &[data-has-error="true"] {
         position: relative;
         animation: ${Shake} 1s ease-in-out;
-        box-shadow: 0 0 1px 2px ${props => props.theme.XComponent?.global?.color?.error??'currentColor'};
+        box-shadow: 0 0 10px 1px ${props => props.theme.XComponent?.global?.color?.error??'currentColor'};
     }
 `
 
