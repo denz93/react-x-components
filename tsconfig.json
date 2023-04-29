@@ -17,9 +17,16 @@
     "jsx": "react-jsx",
     "declaration": true,
     "outDir": "dist",
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "@libs/*": ["src/libs/*"],
+      "@dist/*": ["dist/*"],
+      "@public/*": ["public/*"]
+    },
   },
   "include": ["src"],
   "exclude": ["src/scripts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }],
 }

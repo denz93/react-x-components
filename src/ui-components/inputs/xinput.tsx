@@ -12,7 +12,7 @@ const HTML_SPACE_CHAR = '&nbsp;'
 
 export interface IXInputProps extends IXBaseInputProps<string> {
     type: "text" | "password"
-
+    
     /**
      * @description
      * 
@@ -37,8 +37,7 @@ export interface IXInputProps extends IXBaseInputProps<string> {
      * - and /: is a template string. It could be any characters that you want to display
      */
     displayTemplate: string
-    maxLen: number 
-    minLen: number
+    
 }
 
 

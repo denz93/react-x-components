@@ -3,10 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "./dist/x-component.umd.js",
+  "module": "./dist/x-component.js",
+  "types": "./dist/x-component.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "lodash": "^4.17.21",
@@ -26,6 +30,8 @@
     "styled-components": "^5.3.9",
     "tsx": "^3.12.6",
     "typescript": "^4.9.3",
-    "vite": "^4.2.0"
+    "vite": "^4.2.0",
+    "vite-plugin-dts": "^2.3.0",
+    "vitest": "^0.30.1"
   }
 }

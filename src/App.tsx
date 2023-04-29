@@ -30,16 +30,21 @@ function App() {
     'Personal Info': { 
       firstName: { 
         type: 'text', 
-        constraints: Validator.type('string').required().max(100) 
+        constraints: Validator.type('string').required().max(100) ,
+        label: 'First Name'
       }, 
       lastName: {
         type: 'text', 
-        constraints: Validator.type('string').required().max(100) 
+        constraints: Validator.type('string').required().max(100),
+        label: 'Last Name',
+        
       },
       phoneNumber: {
         type: 'phone',
         label: 'Phone Number',
-        constraints: Validator.type('string').required()
+        constraints: Validator.type('string', {regex: 'Must be a phone number'})
+          .required()
+          .regex('^\\+(([0-9]{1,3})|(1-[0-9]{3}))[0-9]{10,11}$')
       }
     },
     'Login': { 
@@ -96,7 +101,7 @@ function App() {
           />
         </div>
 
-        <div style={{width: '15em'}}>
+        <div style={{width: '12em'}}>
           <XDropdownInput 
             optionList={options} 
             placeholder='Select a option'

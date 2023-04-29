@@ -15,7 +15,7 @@ export const FloatSection = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
-  padding: .7em 1em;
+  padding: .7em 2em;
   gap: 1em;
   transition: filter .3s ease-in-out, transform .5s ease-in-out;
   filter: blur(10px) ;
@@ -35,7 +35,7 @@ export const FloatSection = styled.div`
   }
 
   &:before, &:after {
-    content: '--- Option List ---';
+    content: '------';
     display: block;
     opacity: .4;
     font-weight: bolder;
@@ -73,21 +73,16 @@ export const Option = styled.div`
     width: 1em;
     height: 1em;
     transition: opacity .2s ease-in-out, transform .4s ease-in-out;
-    border-radius: 0;
     opacity: 0;
-    top: 50%;
-    left: -1.2em;
-    border: 1px solid currentColor;
-    transform: translateY(-50%) scale(0);
-    border-radius: 10em;
-    scale: .8;
+    left: -1.5em;
+    transform:scale(0);
   }
   &[data-selected="true"] {
     filter: brightness(1.4);
     font-weight: bolder;
     &:after {
       
-      transform: translateY(-50%) scale(1);
+      transform: scale(1);
       opacity: 1;
     }
     
@@ -127,7 +122,7 @@ export interface IXSearchInputProps<T> {
   onSearchChanged: (value: string) => void 
   onOptionSelected: (option: T | null) => void 
 }
-const defaultOptionFormater = <T,>(option: T) => {
+const defaultOptionFormater = <TOption,>(option: TOption) => {
   return String(option)
 }
 const defaultOptionDisplayFormater = <T,>(option: T) => {
@@ -138,9 +133,9 @@ const defaultOptionMatchStrategy = <T,>(option: T, searchValue: string) => {
 }
 
 export function XDrowdownInputRaw<T>({
-  optionFormater = defaultOptionFormater<T>, 
-  optionDisplayFormater = defaultOptionDisplayFormater<T>,
-  optionMatchStrategy = defaultOptionMatchStrategy<T>,
+  optionFormater = defaultOptionFormater, 
+  optionDisplayFormater = defaultOptionDisplayFormater,
+  optionMatchStrategy = defaultOptionMatchStrategy,
   optionList,
   onOptionSelected,
   placeholder,
@@ -179,9 +174,6 @@ export function XDrowdownInputRaw<T>({
     
   }, [])
 
-  useEffect(() => {
-    setSelectedOption(defaultOption ?? null)
-  }, [defaultOption])
   return <Main
     {...props}
     ref={mainRef}

@@ -25,31 +25,19 @@ export function XPhoneInputRaw ({
     const countryList = useMemo(() => getCountryListByCodes(allowedCountries), [allowedCountries])
     
     const selectedCountryOption = useMemo(
-        () => flagOptions.find(o => o.code.toLowerCase() === countryCode?.toLowerCase()) ?? flagOptions[0], 
+        () => countryList.find(o => o.code.toLowerCase() === countryCode?.toLowerCase()) ?? null, 
         [countryCode]) 
-    
-    useEffect(() => {
-        if (typeof props.defautCountryCode === 'string') {
-            setCountryCode(props.defautCountryCode)
-            return
-        } 
-
-        const localCountryCode = getLocalCountryCode()
-
-        setCountryCode(localCountryCode)
-
-    }, [props.defautCountryCode])
 
     useEffect(() => {
         const newValue = value ?? ''
 
-        setPhonenumber(newValue.replace(selectedCountryOption.dial_code, ''))
+        setPhonenumber(newValue.replace(selectedCountryOption?.dial_code??'', ''))
     }, [value])
 
     return <Main {...props} >
         <Flag 
             optionList={countryList}
-            defaultOption={selectedCountryOption}
+            defaultOption={selectedCountryOption??undefined}
             optionFormater={(option) => `${option.emoji} ${option.dial_code} ${option.name}`}
             optionDisplayFormater={option => `${option.dial_code}`}
             optionMatchStrategy={({dial_code, name, code}, value) => 
@@ -68,7 +56,7 @@ export function XPhoneInputRaw ({
             displayTemplate={phoneTemplate}
             placeholder={props.placeholder ?? 'Phone number'}
             onChange={(value) => {
-                const newPhonenumber = selectedCountryOption.dial_code + value
+                const newPhonenumber = ((selectedCountryOption?.dial_code)??'') + value
                 setPhonenumber(value)
                 onChange && onChange(newPhonenumber)
             }}
@@ -104,6 +92,9 @@ const Flag = styled(XDropdownInput<IFlagOption>)`
         display: inline-block;
         text-align: left;
         text-overflow: hidden;
+        &:after{
+            top:0;
+        }
     }
    }
 `

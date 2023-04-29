@@ -10,9 +10,9 @@ import { XPhoneInput } from "./x-phone-input";
 export interface IXFormProps<TFormStage extends IFormStage> {
     form: FormContext<TFormStage>
     title?: string 
-
+    submitLabel?: string
 }
-export function XForm<T extends IFormStage>({form, title}: IXFormProps<T>) {
+export function XForm<T extends IFormStage>({form, title, submitLabel='submit'}: IXFormProps<T>) {
     const { 
         currentStage, 
         totalStages,
@@ -80,7 +80,7 @@ export function XForm<T extends IFormStage>({form, title}: IXFormProps<T>) {
                 {!hasNext && <XButton type="button" onClick={() => {
                     const err = validateStage(currentStage)
                     !err && submit()
-                }}>Submit</XButton>}
+                }}>{submitLabel}</XButton>}
             </>}
             
 
